@@ -1,0 +1,671 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>Daily Stack</title>
+  <style>
+    :root {
+      --bg: #0b1020;
+      --card: #141b34;
+      --muted: #97a3c6;
+      --text: #f4f7ff;
+      --accent: #6ea8fe;
+      --accent-2: #7ee787;
+      --warn: #ffb86b;
+      --danger: #ff7b72;
+      --border: rgba(255,255,255,0.08);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background: linear-gradient(180deg, #0b1020 0%, #0e1730 100%);
+      color: var(--text);
+    }
+    .app {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 16px 16px 90px;
+    }
+    h1, h2, h3, p { margin: 0; }
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 16px;
+      padding-top: 8px;
+    }
+    .subtle { color: var(--muted); font-size: 0.95rem; }
+    .progress-wrap {
+      min-width: 86px;
+      text-align: center;
+    }
+    .progress-ring {
+      width: 76px;
+      height: 76px;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      background: conic-gradient(var(--accent-2) 0deg, var(--accent-2) 0deg, rgba(255,255,255,.08) 0deg);
+      margin-left: auto;
+      position: relative;
+    }
+    .progress-ring::after {
+      content: "";
+      position: absolute;
+      inset: 7px;
+      background: var(--bg);
+      border-radius: 50%;
+    }
+    .progress-ring span {
+      position: relative;
+      z-index: 1;
+      font-weight: 700;
+      font-size: 0.95rem;
+    }
+    .tabs {
+      display: flex;
+      gap: 8px;
+      margin: 14px 0 18px;
+      flex-wrap: wrap;
+    }
+    .tab {
+      border: 1px solid var(--border);
+      background: rgba(255,255,255,0.03);
+      color: var(--text);
+      padding: 10px 14px;
+      border-radius: 999px;
+      cursor: pointer;
+    }
+    .tab.active { background: var(--accent); color: #07101f; border-color: transparent; font-weight: 700; }
+    .screen { display: none; }
+    .screen.active { display: block; }
+    .card {
+      background: rgba(255,255,255,0.04);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 16px;
+      margin-bottom: 14px;
+      box-shadow: 0 10px 28px rgba(0,0,0,.18);
+    }
+    .card-head {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+    .pill {
+      padding: 6px 10px;
+      border-radius: 999px;
+      font-size: 0.8rem;
+      font-weight: 700;
+      border: 1px solid var(--border);
+    }
+    .due { color: var(--warn); }
+    .done { color: var(--accent-2); }
+    .skipped { color: var(--danger); }
+    .item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 0;
+      border-top: 1px solid rgba(255,255,255,.06);
+    }
+    .item:first-of-type { border-top: 0; }
+    input[type="checkbox"] { width: 20px; height: 20px; accent-color: var(--accent-2); }
+    .item-meta { flex: 1; }
+    .item-meta small { color: var(--muted); display: block; margin-top: 2px; }
+    .btns { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+    button, .ghost-input {
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 10px 12px;
+      background: rgba(255,255,255,.05);
+      color: var(--text);
+      font: inherit;
+    }
+    button.primary { background: var(--accent); color: #06111e; border-color: transparent; font-weight: 700; }
+    button.warn { background: rgba(255,184,107,.12); color: var(--warn); }
+    button.danger { background: rgba(255,123,114,.12); color: var(--danger); }
+    button:active { transform: translateY(1px); }
+    .grid { display: grid; gap: 12px; }
+    .grid.two { grid-template-columns: repeat(2, minmax(0,1fr)); }
+    @media (max-width: 700px) { .grid.two { grid-template-columns: 1fr; } }
+    label { display: block; font-size: .92rem; color: var(--muted); margin-bottom: 6px; }
+    input, textarea, select {
+      width: 100%;
+      border: 1px solid var(--border);
+      background: rgba(255,255,255,0.04);
+      color: var(--text);
+      border-radius: 12px;
+      padding: 12px;
+      font: inherit;
+    }
+    textarea { min-height: 92px; resize: vertical; }
+    .note {
+      margin-top: 10px;
+      padding: 10px 12px;
+      border-radius: 12px;
+      background: rgba(110,168,254,.12);
+      color: #dbe9ff;
+      font-size: .92rem;
+    }
+    .warning {
+      background: rgba(255,184,107,.12);
+      color: #ffe2ba;
+    }
+    .danger-box {
+      background: rgba(255,123,114,.12);
+      color: #ffd3cf;
+    }
+    .metric {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 12px 0;
+      border-top: 1px solid rgba(255,255,255,.06);
+    }
+    .metric:first-child { border-top: 0; }
+    .radio-row, .seg-row {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .seg-row button { min-width: 44px; }
+    .mini {
+      font-size: 0.85rem;
+      color: var(--muted);
+    }
+    .bar {
+      height: 10px;
+      border-radius: 999px;
+      background: rgba(255,255,255,.08);
+      overflow: hidden;
+      margin-top: 6px;
+    }
+    .bar > div {
+      height: 100%;
+      width: 0;
+      background: linear-gradient(90deg, var(--accent), var(--accent-2));
+    }
+    .list-clean { display: grid; gap: 8px; margin-top: 10px; }
+    .footer-mini { text-align: center; color: var(--muted); font-size: .8rem; margin-top: 20px; }
+    a { color: #b6d2ff; }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <div class="header">
+      <div>
+        <h1>Daily Stack</h1>
+        <p class="subtle" id="todayDate"></p>
+      </div>
+      <div class="progress-wrap">
+        <div class="progress-ring" id="progressRing"><span id="progressPct">0%</span></div>
+        <div class="mini">today done</div>
+      </div>
+    </div>
+
+    <div class="tabs">
+      <button class="tab active" data-screen="today">Today</button>
+      <button class="tab" data-screen="schedule">Schedule</button>
+      <button class="tab" data-screen="progress">Progress</button>
+      <button class="tab" data-screen="settings">Settings</button>
+    </div>
+
+    <section class="screen active" id="today"></section>
+
+    <section class="screen" id="schedule">
+      <div class="card">
+        <h2>Reminder times</h2>
+        <p class="subtle" style="margin-top:6px;">These are local times saved in your browser. Phone/browser notifications work only when you allow them and keep the app installed/opened as a web app.</p>
+      </div>
+      <div id="scheduleForm"></div>
+    </section>
+
+    <section class="screen" id="progress">
+      <div class="grid two">
+        <div class="card">
+          <h2>7-day adherence</h2>
+          <div id="adherence7" class="list-clean"></div>
+        </div>
+        <div class="card">
+          <h2>Current streak</h2>
+          <p id="streakText" style="font-size:2rem; font-weight:800; margin-top:8px;">0 days</p>
+          <p class="subtle" style="margin-top:6px;">Counts days where every item was either taken or intentionally skipped and at least 80% were taken.</p>
+        </div>
+      </div>
+      <div class="grid two">
+        <div class="card">
+          <h2>Average check-in</h2>
+          <div id="avgCheckins" class="list-clean"></div>
+        </div>
+        <div class="card">
+          <h2>Recent notes</h2>
+          <div id="recentNotes" class="list-clean"></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="screen" id="settings">
+      <div class="card">
+        <h2>Notification helper</h2>
+        <p class="subtle" style="margin-top:6px;">This app can request browser notifications. On iPhone, the best experience is to add this page to your Home Screen in Safari, open it from there, and allow notifications when prompted.</p>
+        <div class="btns">
+          <button class="primary" id="enableNotifications">Enable notifications</button>
+          <button id="testNotification">Send test notification</button>
+        </div>
+        <div class="note warning" style="margin-top:12px;">For reliable reminders, Apple Reminders or the ChatGPT reminders you already set up are still better. This app is strongest as a tracker/checkoff dashboard.</div>
+      </div>
+      <div class="card">
+        <h2>Export / backup</h2>
+        <div class="btns">
+          <button id="exportData">Export JSON</button>
+          <label for="importData" class="ghost-input" style="cursor:pointer; display:inline-flex; align-items:center;">Import JSON</label>
+          <input id="importData" type="file" accept="application/json" style="display:none;" />
+          <button class="danger" id="resetAll">Reset all data</button>
+        </div>
+      </div>
+    </section>
+
+    <div class="footer-mini">Built as a local-first prototype. Data stays in this browser via localStorage.</div>
+  </div>
+
+  <script>
+    const STORAGE_KEY = 'daily_stack_app_v1';
+    const todayKey = () => new Date().toISOString().slice(0,10);
+    const prettyDate = () => new Date().toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
+
+    const defaultData = {
+      schedule: {
+        morning: '09:00',
+        breakfast: '10:00',
+        workout: '16:30',
+        night: '21:00'
+      },
+      routines: [
+        {
+          id: 'morning',
+          name: 'Morning Med',
+          timeKey: 'morning',
+          instructions: 'Levothyroxine must be taken with water only on an empty stomach.',
+          items: [
+            { id: 'levothyroxine', name: 'Levothyroxine', dose: '1 tablet', note: 'Water only. No food, coffee, or supplements.' }
+          ]
+        },
+        {
+          id: 'breakfast',
+          name: 'Breakfast Stack',
+          timeKey: 'breakfast',
+          instructions: 'Take with breakfast or food.',
+          items: [
+            { id: 'citrulline_am', name: 'L-Citrulline', dose: '3 g', note: '' },
+            { id: 'pine_bark', name: 'Pine Bark (Pycnogenol)', dose: '100 mg', note: '' },
+            { id: 'fish_oil', name: 'Fish Oil', dose: '1,500–2,000 mg EPA+DHA/day', note: 'Usually 2 softgels, depending on brand.' },
+            { id: 'coq10', name: 'CoQ10 (Ubiquinol)', dose: '100–200 mg', note: '' },
+            { id: 'vitd', name: 'Vitamin D3 + K2', dose: 'standard dose', note: '' }
+          ]
+        },
+        {
+          id: 'workout',
+          name: 'Pre-Workout Stack',
+          timeKey: 'workout',
+          instructions: 'Take before lifting or afternoon workout.',
+          items: [
+            { id: 'citrulline_pm', name: 'L-Citrulline', dose: '3–5 g', note: '' },
+            { id: 'creatine', name: 'Creatine', dose: '5 g', note: '' }
+          ]
+        },
+        {
+          id: 'night',
+          name: 'Night Stack',
+          timeKey: 'night',
+          instructions: 'Take at dinner or before bed. Avoid grapefruit with Lipitor.',
+          items: [
+            { id: 'lipitor', name: 'Lipitor', dose: '10 mg', note: 'Avoid grapefruit.' },
+            { id: 'magnesium', name: 'Magnesium Glycinate', dose: '300–400 mg', note: '' }
+          ]
+        }
+      ],
+      logs: {},
+      checkins: {}
+    };
+
+    function loadData() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (!raw) return structuredClone(defaultData);
+        const parsed = JSON.parse(raw);
+        return {
+          ...structuredClone(defaultData),
+          ...parsed,
+          schedule: { ...defaultData.schedule, ...(parsed.schedule || {}) },
+          logs: parsed.logs || {},
+          checkins: parsed.checkins || {}
+        };
+      } catch {
+        return structuredClone(defaultData);
+      }
+    }
+
+    let state = loadData();
+
+    function saveData() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    }
+
+    function getLog(date, itemId) {
+      return state.logs?.[date]?.[itemId] || { status: 'due', takenAt: null };
+    }
+
+    function setLog(date, itemId, status) {
+      state.logs[date] ||= {};
+      state.logs[date][itemId] = { status, takenAt: new Date().toISOString() };
+      saveData();
+      renderAll();
+    }
+
+    function setCheckinField(date, field, value) {
+      state.checkins[date] ||= { energy: 5, workoutDone: false, stepsGoal: false, notes: '', ed: 5, circulation: 5, sleep: 5 };
+      state.checkins[date][field] = value;
+      saveData();
+      renderProgress();
+    }
+
+    function dayItemsCount() {
+      return state.routines.reduce((sum, r) => sum + r.items.length, 0);
+    }
+
+    function progressForDate(date) {
+      const total = dayItemsCount();
+      let taken = 0, complete = 0;
+      state.routines.forEach(r => r.items.forEach(i => {
+        const s = getLog(date, i.id).status;
+        if (s === 'taken') taken++;
+        if (s === 'taken' || s === 'skipped') complete++;
+      }));
+      return { total, taken, complete, pct: Math.round((taken / total) * 100), completePct: Math.round((complete / total) * 100) };
+    }
+
+    function cardStatus(routine) {
+      const date = todayKey();
+      const statuses = routine.items.map(i => getLog(date, i.id).status);
+      if (statuses.every(s => s === 'taken')) return ['Done', 'done'];
+      if (statuses.some(s => s === 'taken')) return ['In progress', 'due'];
+      if (statuses.every(s => s === 'skipped')) return ['Skipped', 'skipped'];
+      return ['Due', 'due'];
+    }
+
+    function isBreakfastLocked() {
+      const morning = getLog(todayKey(), 'levothyroxine');
+      if (morning.status !== 'taken' || !morning.takenAt) return true;
+      const diffMs = Date.now() - new Date(morning.takenAt).getTime();
+      return diffMs < 30 * 60 * 1000;
+    }
+
+    function minutesToBreakfastUnlock() {
+      const morning = getLog(todayKey(), 'levothyroxine');
+      if (!morning.takenAt) return 30;
+      const passed = Math.floor((Date.now() - new Date(morning.takenAt).getTime()) / 60000);
+      return Math.max(0, 30 - passed);
+    }
+
+    function renderToday() {
+      document.getElementById('todayDate').textContent = prettyDate();
+      const root = document.getElementById('today');
+      root.innerHTML = '';
+
+      state.routines.forEach(routine => {
+        const [statusText, statusClass] = cardStatus(routine);
+        const time = state.schedule[routine.timeKey];
+        const card = document.createElement('div');
+        card.className = 'card';
+
+        const lockNote = routine.id === 'breakfast' && isBreakfastLocked();
+
+        card.innerHTML = `
+          <div class="card-head">
+            <div>
+              <h2>${routine.name}</h2>
+              <p class="subtle" style="margin-top:4px;">${time} · ${routine.instructions}</p>
+            </div>
+            <div class="pill ${statusClass}">${statusText}</div>
+          </div>
+          ${lockNote ? `<div class="note warning">Breakfast stack is locked until 30 minutes after levothyroxine. ${minutesToBreakfastUnlock()} min remaining.</div>` : ''}
+          <div class="items"></div>
+          <div class="btns">
+            <button class="primary" data-action="take-all" data-routine="${routine.id}">Taken all</button>
+            <button class="warn" data-action="snooze" data-routine="${routine.id}">Snooze 15 min</button>
+            <button class="danger" data-action="skip-all" data-routine="${routine.id}">Skip all</button>
+          </div>
+        `;
+
+        const itemsWrap = card.querySelector('.items');
+        routine.items.forEach(item => {
+          const log = getLog(todayKey(), item.id);
+          const row = document.createElement('div');
+          row.className = 'item';
+          const disabled = lockNote ? 'disabled' : '';
+          row.innerHTML = `
+            <input type="checkbox" ${log.status === 'taken' ? 'checked' : ''} ${disabled} data-item="${item.id}" data-routine="${routine.id}" />
+            <div class="item-meta">
+              <strong>${item.name}</strong>
+              <small>${item.dose}${item.note ? ' · ' + item.note : ''}</small>
+            </div>
+            <button data-skip-item="${item.id}" ${disabled}>${log.status === 'skipped' ? 'Skipped' : 'Skip'}</button>
+          `;
+          itemsWrap.appendChild(row);
+        });
+        root.appendChild(card);
+      });
+
+      const checkin = state.checkins[todayKey()] || { energy: 5, workoutDone: false, stepsGoal: false, notes: '', ed: 5, circulation: 5, sleep: 5 };
+      const checkCard = document.createElement('div');
+      checkCard.className = 'card';
+      checkCard.innerHTML = `
+        <h2>Daily check-in</h2>
+        <p class="subtle" style="margin-top:4px;">Quick scores help you spot what improves energy, circulation, and ED over time.</p>
+        <div class="metric"><div><strong>Energy</strong></div><div class="seg-row" data-seg="energy"></div></div>
+        <div class="metric"><div><strong>ED confidence</strong></div><div class="seg-row" data-seg="ed"></div></div>
+        <div class="metric"><div><strong>Circulation</strong></div><div class="seg-row" data-seg="circulation"></div></div>
+        <div class="metric"><div><strong>Sleep quality</strong></div><div class="seg-row" data-seg="sleep"></div></div>
+        <div class="metric"><div><strong>Workout done</strong></div><div><input id="workoutDone" type="checkbox" ${checkin.workoutDone ? 'checked' : ''}></div></div>
+        <div class="metric"><div><strong>Steps goal hit</strong></div><div><input id="stepsGoal" type="checkbox" ${checkin.stepsGoal ? 'checked' : ''}></div></div>
+        <div style="margin-top:10px;">
+          <label for="dayNotes">Notes</label>
+          <textarea id="dayNotes" placeholder="Anything you noticed today...">${checkin.notes || ''}</textarea>
+        </div>
+      `;
+      root.appendChild(checkCard);
+
+      ['energy','ed','circulation','sleep'].forEach(field => {
+        const wrap = checkCard.querySelector(`[data-seg="${field}"]`);
+        for (let i=1;i<=10;i++) {
+          const b = document.createElement('button');
+          b.textContent = i;
+          if (checkin[field] === i) b.classList.add('primary');
+          b.addEventListener('click', () => setCheckinField(todayKey(), field, i));
+          wrap.appendChild(b);
+        }
+      });
+
+      checkCard.querySelector('#workoutDone').addEventListener('change', e => setCheckinField(todayKey(), 'workoutDone', e.target.checked));
+      checkCard.querySelector('#stepsGoal').addEventListener('change', e => setCheckinField(todayKey(), 'stepsGoal', e.target.checked));
+      checkCard.querySelector('#dayNotes').addEventListener('change', e => setCheckinField(todayKey(), 'notes', e.target.value));
+
+      root.querySelectorAll('input[data-item]').forEach(cb => {
+        cb.addEventListener('change', e => setLog(todayKey(), e.target.dataset.item, e.target.checked ? 'taken' : 'due'));
+      });
+      root.querySelectorAll('button[data-skip-item]').forEach(btn => {
+        btn.addEventListener('click', e => {
+          const itemId = e.target.dataset.skipItem;
+          const log = getLog(todayKey(), itemId);
+          setLog(todayKey(), itemId, log.status === 'skipped' ? 'due' : 'skipped');
+        });
+      });
+      root.querySelectorAll('button[data-action]').forEach(btn => {
+        btn.addEventListener('click', e => {
+          const action = e.target.dataset.action;
+          const routineId = e.target.dataset.routine;
+          const routine = state.routines.find(r => r.id === routineId);
+          if (routineId === 'breakfast' && isBreakfastLocked()) return;
+          if (action === 'take-all') routine.items.forEach(i => setLog(todayKey(), i.id, 'taken'));
+          if (action === 'skip-all') routine.items.forEach(i => setLog(todayKey(), i.id, 'skipped'));
+          if (action === 'snooze') alert(`${routine.name} snoozed 15 minutes. For real push scheduling, use Apple Reminders or enable browser notifications.`);
+        });
+      });
+
+      const prog = progressForDate(todayKey());
+      const deg = Math.round((prog.pct / 100) * 360);
+      document.getElementById('progressRing').style.background = `conic-gradient(var(--accent-2) 0deg, var(--accent-2) ${deg}deg, rgba(255,255,255,.08) ${deg}deg)`;
+      document.getElementById('progressPct').textContent = `${prog.pct}%`;
+    }
+
+    function renderSchedule() {
+      const root = document.getElementById('scheduleForm');
+      root.innerHTML = '';
+      const labels = {
+        morning: 'Morning Med',
+        breakfast: 'Breakfast Stack',
+        workout: 'Pre-Workout Stack',
+        night: 'Night Stack'
+      };
+      Object.entries(labels).forEach(([key, label]) => {
+        const card = document.createElement('div');
+        card.className = 'card';
+        card.innerHTML = `
+          <label>${label}</label>
+          <input type="time" value="${state.schedule[key]}" data-timekey="${key}" />
+        `;
+        root.appendChild(card);
+      });
+      root.querySelectorAll('input[type="time"]').forEach(inp => {
+        inp.addEventListener('change', e => {
+          state.schedule[e.target.dataset.timekey] = e.target.value;
+          saveData();
+          renderToday();
+        });
+      });
+    }
+
+    function lastNDates(n) {
+      const arr = [];
+      for (let i=0;i<n;i++) {
+        const d = new Date();
+        d.setDate(d.getDate() - i);
+        arr.push(d.toISOString().slice(0,10));
+      }
+      return arr.reverse();
+    }
+
+    function renderProgress() {
+      const adherence = document.getElementById('adherence7');
+      adherence.innerHTML = '';
+      lastNDates(7).forEach(date => {
+        const p = progressForDate(date);
+        const row = document.createElement('div');
+        row.innerHTML = `
+          <div style="display:flex; justify-content:space-between; gap:10px;">
+            <span>${new Date(date+'T12:00:00').toLocaleDateString(undefined,{weekday:'short', month:'short', day:'numeric'})}</span>
+            <strong>${p.pct}%</strong>
+          </div>
+          <div class="bar"><div style="width:${p.pct}%;"></div></div>
+        `;
+        adherence.appendChild(row);
+      });
+
+      let streak = 0;
+      const dates = lastNDates(30).reverse();
+      for (const date of dates) {
+        const p = progressForDate(date);
+        if (p.completePct === 100 && p.pct >= 80) streak++;
+        else break;
+      }
+      document.getElementById('streakText').textContent = `${streak} day${streak === 1 ? '' : 's'}`;
+
+      const checkins = lastNDates(14).map(d => state.checkins[d]).filter(Boolean);
+      const avg = field => checkins.length ? (checkins.reduce((s,c)=>s+(Number(c[field])||0),0) / checkins.length).toFixed(1) : '—';
+      const avgRoot = document.getElementById('avgCheckins');
+      avgRoot.innerHTML = `
+        <div>Energy: <strong>${avg('energy')}</strong></div>
+        <div>ED confidence: <strong>${avg('ed')}</strong></div>
+        <div>Circulation: <strong>${avg('circulation')}</strong></div>
+        <div>Sleep quality: <strong>${avg('sleep')}</strong></div>
+      `;
+
+      const notesRoot = document.getElementById('recentNotes');
+      notesRoot.innerHTML = '';
+      const notes = lastNDates(14)
+        .map(d => ({ date: d, note: state.checkins[d]?.notes }))
+        .filter(x => x.note && x.note.trim());
+      if (!notes.length) {
+        notesRoot.innerHTML = '<div class="subtle">No notes yet.</div>';
+      } else {
+        notes.slice(-5).reverse().forEach(n => {
+          const div = document.createElement('div');
+          div.className = 'note';
+          div.innerHTML = `<strong>${new Date(n.date+'T12:00:00').toLocaleDateString()}</strong><br>${n.note}`;
+          notesRoot.appendChild(div);
+        });
+      }
+    }
+
+    function renderAll() {
+      renderToday();
+      renderSchedule();
+      renderProgress();
+    }
+
+    document.querySelectorAll('.tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+        tab.classList.add('active');
+        document.getElementById(tab.dataset.screen).classList.add('active');
+      });
+    });
+
+    document.getElementById('enableNotifications').addEventListener('click', async () => {
+      if (!('Notification' in window)) return alert('This browser does not support notifications.');
+      const result = await Notification.requestPermission();
+      alert(`Notification permission: ${result}`);
+    });
+    document.getElementById('testNotification').addEventListener('click', () => {
+      if (Notification.permission !== 'granted') return alert('Enable notifications first.');
+      new Notification('Daily Stack', { body: 'Test reminder is working.' });
+    });
+    document.getElementById('exportData').addEventListener('click', () => {
+      const blob = new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = `daily-stack-backup-${todayKey()}.json`;
+      a.click();
+    });
+    document.getElementById('importData').addEventListener('change', async e => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const text = await file.text();
+      try {
+        state = JSON.parse(text);
+        saveData();
+        renderAll();
+        alert('Import complete.');
+      } catch {
+        alert('Could not import that file.');
+      }
+    });
+    document.getElementById('resetAll').addEventListener('click', () => {
+      if (!confirm('Reset all data? This cannot be undone.')) return;
+      state = structuredClone(defaultData);
+      saveData();
+      renderAll();
+    });
+
+    renderAll();
+  </script>
+</body>
+</html>

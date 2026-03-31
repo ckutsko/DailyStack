@@ -1,671 +1,642 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <title>Daily Stack</title>
+  <meta name="theme-color" content="#f5f5f7" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="apple-mobile-web-app-title" content="Daily Stack" />
+  <link rel="manifest" href="manifest.webmanifest" />
   <style>
     :root {
-      --bg: #0b1020;
-      --card: #141b34;
-      --muted: #97a3c6;
-      --text: #f4f7ff;
-      --accent: #6ea8fe;
-      --accent-2: #7ee787;
-      --warn: #ffb86b;
-      --danger: #ff7b72;
-      --border: rgba(255,255,255,0.08);
+      --bg: #f5f5f7;
+      --card: rgba(255,255,255,.82);
+      --text: #111111;
+      --muted: #6e6e73;
+      --line: rgba(60,60,67,.18);
+      --accent: #007aff;
+      --accent-soft: rgba(0,122,255,.12);
+      --green: #34c759;
+      --orange: #ff9f0a;
+      --red: #ff3b30;
+      --shadow: 0 14px 40px rgba(0,0,0,.08);
+      --radius: 24px;
     }
+
     * { box-sizing: border-box; }
-    body {
-      margin: 0;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-      background: linear-gradient(180deg, #0b1020 0%, #0e1730 100%);
-      color: var(--text);
-    }
+    html, body { margin: 0; padding: 0; background: linear-gradient(180deg, #f7f7fa 0%, #eceef4 100%); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', sans-serif; }
+    body { min-height: 100vh; }
+
     .app {
-      max-width: 900px;
+      max-width: 780px;
       margin: 0 auto;
-      padding: 16px 16px 90px;
+      padding: max(18px, env(safe-area-inset-top)) 16px calc(110px + env(safe-area-inset-bottom));
     }
-    h1, h2, h3, p { margin: 0; }
-    .header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 12px;
-      margin-bottom: 16px;
-      padding-top: 8px;
+
+    .hero {
+      position: sticky;
+      top: 0;
+      z-index: 5;
+      padding: 14px 0 16px;
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      background: linear-gradient(to bottom, rgba(245,245,247,.92), rgba(245,245,247,.72), rgba(245,245,247,0));
     }
-    .subtle { color: var(--muted); font-size: 0.95rem; }
-    .progress-wrap {
-      min-width: 86px;
-      text-align: center;
+
+    .eyebrow { font-size: 13px; color: var(--muted); margin-bottom: 4px; font-weight: 600; letter-spacing: .02em; }
+    h1 { margin: 0; font-size: 36px; line-height: 1; letter-spacing: -0.04em; }
+    .subhead { margin-top: 8px; color: var(--muted); font-size: 15px; }
+
+    .glass {
+      background: var(--card);
+      border: 1px solid rgba(255,255,255,.7);
+      box-shadow: var(--shadow);
+      border-radius: var(--radius);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
     }
-    .progress-ring {
-      width: 76px;
-      height: 76px;
-      border-radius: 50%;
-      display: grid;
-      place-items: center;
-      background: conic-gradient(var(--accent-2) 0deg, var(--accent-2) 0deg, rgba(255,255,255,.08) 0deg);
-      margin-left: auto;
-      position: relative;
-    }
-    .progress-ring::after {
-      content: "";
-      position: absolute;
-      inset: 7px;
-      background: var(--bg);
-      border-radius: 50%;
-    }
-    .progress-ring span {
-      position: relative;
-      z-index: 1;
-      font-weight: 700;
-      font-size: 0.95rem;
-    }
-    .tabs {
-      display: flex;
-      gap: 8px;
-      margin: 14px 0 18px;
-      flex-wrap: wrap;
-    }
-    .tab {
-      border: 1px solid var(--border);
-      background: rgba(255,255,255,0.03);
-      color: var(--text);
-      padding: 10px 14px;
-      border-radius: 999px;
-      cursor: pointer;
-    }
-    .tab.active { background: var(--accent); color: #07101f; border-color: transparent; font-weight: 700; }
-    .screen { display: none; }
-    .screen.active { display: block; }
-    .card {
-      background: rgba(255,255,255,0.04);
-      border: 1px solid var(--border);
-      border-radius: 18px;
+
+    .summary {
+      margin-top: 18px;
       padding: 16px;
-      margin-bottom: 14px;
-      box-shadow: 0 10px 28px rgba(0,0,0,.18);
-    }
-    .card-head {
-      display: flex;
-      align-items: flex-start;
-      justify-content: space-between;
-      gap: 10px;
-      margin-bottom: 10px;
-    }
-    .pill {
-      padding: 6px 10px;
-      border-radius: 999px;
-      font-size: 0.8rem;
-      font-weight: 700;
-      border: 1px solid var(--border);
-    }
-    .due { color: var(--warn); }
-    .done { color: var(--accent-2); }
-    .skipped { color: var(--danger); }
-    .item {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      padding: 10px 0;
-      border-top: 1px solid rgba(255,255,255,.06);
-    }
-    .item:first-of-type { border-top: 0; }
-    input[type="checkbox"] { width: 20px; height: 20px; accent-color: var(--accent-2); }
-    .item-meta { flex: 1; }
-    .item-meta small { color: var(--muted); display: block; margin-top: 2px; }
-    .btns { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
-    button, .ghost-input {
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 10px 12px;
-      background: rgba(255,255,255,.05);
-      color: var(--text);
-      font: inherit;
-    }
-    button.primary { background: var(--accent); color: #06111e; border-color: transparent; font-weight: 700; }
-    button.warn { background: rgba(255,184,107,.12); color: var(--warn); }
-    button.danger { background: rgba(255,123,114,.12); color: var(--danger); }
-    button:active { transform: translateY(1px); }
-    .grid { display: grid; gap: 12px; }
-    .grid.two { grid-template-columns: repeat(2, minmax(0,1fr)); }
-    @media (max-width: 700px) { .grid.two { grid-template-columns: 1fr; } }
-    label { display: block; font-size: .92rem; color: var(--muted); margin-bottom: 6px; }
-    input, textarea, select {
-      width: 100%;
-      border: 1px solid var(--border);
-      background: rgba(255,255,255,0.04);
-      color: var(--text);
-      border-radius: 12px;
-      padding: 12px;
-      font: inherit;
-    }
-    textarea { min-height: 92px; resize: vertical; }
-    .note {
-      margin-top: 10px;
-      padding: 10px 12px;
-      border-radius: 12px;
-      background: rgba(110,168,254,.12);
-      color: #dbe9ff;
-      font-size: .92rem;
-    }
-    .warning {
-      background: rgba(255,184,107,.12);
-      color: #ffe2ba;
-    }
-    .danger-box {
-      background: rgba(255,123,114,.12);
-      color: #ffd3cf;
-    }
-    .metric {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
+      display: grid;
+      grid-template-columns: 1.3fr 1fr 1fr;
       gap: 12px;
-      padding: 12px 0;
-      border-top: 1px solid rgba(255,255,255,.06);
+      align-items: center;
     }
-    .metric:first-child { border-top: 0; }
-    .radio-row, .seg-row {
+
+    .big-progress { display: flex; flex-direction: column; gap: 8px; }
+    .progress-track {
+      height: 12px;
+      width: 100%;
+      background: rgba(60,60,67,.10);
+      border-radius: 999px;
+      overflow: hidden;
+    }
+    .progress-fill {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, #4da3ff 0%, #007aff 100%);
+      border-radius: inherit;
+      transition: width .25s ease;
+    }
+    .progress-label { font-size: 14px; color: var(--muted); }
+    .stat {
+      padding: 14px;
+      border-radius: 18px;
+      background: rgba(255,255,255,.55);
+      border: 1px solid rgba(60,60,67,.08);
+    }
+    .stat .value { font-size: 26px; font-weight: 700; letter-spacing: -0.03em; }
+    .stat .label { font-size: 13px; color: var(--muted); margin-top: 2px; }
+
+    .actions {
+      margin-top: 14px;
       display: flex;
-      gap: 8px;
+      gap: 10px;
       flex-wrap: wrap;
     }
-    .seg-row button { min-width: 44px; }
-    .mini {
-      font-size: 0.85rem;
+
+    button {
+      appearance: none;
+      border: 0;
+      cursor: pointer;
+      font: inherit;
+    }
+
+    .btn {
+      padding: 12px 16px;
+      border-radius: 16px;
+      font-weight: 600;
+      transition: transform .12s ease, opacity .12s ease;
+    }
+    .btn:active { transform: scale(.98); }
+    .btn-primary { background: var(--accent); color: white; }
+    .btn-secondary { background: rgba(255,255,255,.65); color: var(--text); border: 1px solid rgba(60,60,67,.10); }
+
+    .timeline {
+      margin-top: 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .card {
+      padding: 16px;
+      position: relative;
+      overflow: hidden;
+    }
+    .card-header { display: flex; justify-content: space-between; gap: 12px; align-items: center; margin-bottom: 12px; }
+    .time-wrap { display: flex; flex-direction: column; gap: 2px; }
+    .time { font-size: 24px; font-weight: 700; letter-spacing: -0.03em; }
+    .label { font-size: 14px; color: var(--muted); }
+    .pill {
+      padding: 8px 12px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 700;
+      background: rgba(60,60,67,.08);
       color: var(--muted);
     }
-    .bar {
-      height: 10px;
-      border-radius: 999px;
-      background: rgba(255,255,255,.08);
-      overflow: hidden;
-      margin-top: 6px;
+    .pill.done { background: rgba(52,199,89,.15); color: #16863a; }
+    .pill.upnext { background: rgba(0,122,255,.12); color: var(--accent); }
+    .pill.warning { background: rgba(255,159,10,.14); color: #b86b00; }
+
+    .items { display: flex; flex-direction: column; gap: 12px; }
+    .item {
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      gap: 12px;
+      align-items: start;
+      padding: 14px;
+      border-radius: 18px;
+      background: rgba(255,255,255,.68);
+      border: 1px solid rgba(60,60,67,.08);
     }
-    .bar > div {
-      height: 100%;
-      width: 0;
-      background: linear-gradient(90deg, var(--accent), var(--accent-2));
+    .check {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      border: 2px solid rgba(60,60,67,.25);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      background: white;
+      margin-top: 1px;
+      flex-shrink: 0;
+      font-size: 16px;
+      color: transparent;
+      transition: all .18s ease;
     }
-    .list-clean { display: grid; gap: 8px; margin-top: 10px; }
-    .footer-mini { text-align: center; color: var(--muted); font-size: .8rem; margin-top: 20px; }
-    a { color: #b6d2ff; }
+    .item.done .check {
+      background: var(--green);
+      border-color: var(--green);
+      color: white;
+    }
+    .item-main { min-width: 0; }
+    .item-name { font-size: 17px; font-weight: 600; letter-spacing: -0.02em; }
+    .item-dose { font-size: 13px; color: var(--muted); margin-top: 2px; }
+    .item-notes { display: none; margin-top: 8px; font-size: 13px; line-height: 1.35; color: var(--muted); }
+    .item.show-notes .item-notes { display: block; }
+    .info-btn {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: rgba(0,122,255,.10);
+      color: var(--accent);
+      font-weight: 700;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .foot {
+      position: fixed;
+      left: 50%;
+      bottom: calc(16px + env(safe-area-inset-bottom));
+      transform: translateX(-50%);
+      width: min(720px, calc(100% - 32px));
+      padding: 12px;
+      display: flex;
+      gap: 10px;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .foot-copy { font-size: 13px; color: var(--muted); }
+
+    dialog {
+      border: none;
+      border-radius: 24px;
+      padding: 0;
+      width: min(540px, calc(100% - 24px));
+      box-shadow: 0 30px 80px rgba(0,0,0,.18);
+    }
+    dialog::backdrop { background: rgba(0,0,0,.26); backdrop-filter: blur(4px); }
+    .modal { padding: 20px; }
+    .modal h2 { margin: 0 0 8px; font-size: 24px; }
+    .modal p, .modal li { color: var(--muted); line-height: 1.45; }
+    .modal ul { padding-left: 18px; }
+
+    .toast {
+      position: fixed;
+      left: 50%;
+      transform: translateX(-50%);
+      bottom: 104px;
+      background: rgba(20,20,20,.92);
+      color: white;
+      padding: 12px 14px;
+      border-radius: 16px;
+      font-size: 14px;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity .2s ease, transform .2s ease;
+      max-width: calc(100% - 32px);
+    }
+    .toast.show { opacity: 1; transform: translateX(-50%) translateY(-6px); }
+
+    @media (max-width: 700px) {
+      .summary { grid-template-columns: 1fr; }
+      .time { font-size: 22px; }
+      h1 { font-size: 32px; }
+      .foot { flex-direction: column; align-items: stretch; }
+      .foot .btn { width: 100%; }
+    }
   </style>
 </head>
 <body>
   <div class="app">
-    <div class="header">
-      <div>
-        <h1>Daily Stack</h1>
-        <p class="subtle" id="todayDate"></p>
-      </div>
-      <div class="progress-wrap">
-        <div class="progress-ring" id="progressRing"><span id="progressPct">0%</span></div>
-        <div class="mini">today done</div>
-      </div>
+    <div class="hero">
+      <div class="eyebrow" id="todayLabel">Today</div>
+      <h1>Daily Stack</h1>
+      <div class="subhead">A clean, Apple-style supplement and medication tracker.</div>
     </div>
 
-    <div class="tabs">
-      <button class="tab active" data-screen="today">Today</button>
-      <button class="tab" data-screen="schedule">Schedule</button>
-      <button class="tab" data-screen="progress">Progress</button>
-      <button class="tab" data-screen="settings">Settings</button>
+    <section class="summary glass">
+      <div class="big-progress">
+        <div class="progress-label" id="progressText">0 of 8 complete</div>
+        <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
+      </div>
+      <div class="stat">
+        <div class="value" id="streakValue">0</div>
+        <div class="label">day streak</div>
+      </div>
+      <div class="stat">
+        <div class="value" id="energyValue">—</div>
+        <div class="label">energy today</div>
+      </div>
+    </section>
+
+    <div class="actions">
+      <button class="btn btn-primary" id="notifyBtn">Enable reminders</button>
+      <button class="btn btn-secondary" id="energyBtn">Log energy</button>
+      <button class="btn btn-secondary" id="helpBtn">Install on iPhone</button>
     </div>
 
-    <section class="screen active" id="today"></section>
-
-    <section class="screen" id="schedule">
-      <div class="card">
-        <h2>Reminder times</h2>
-        <p class="subtle" style="margin-top:6px;">These are local times saved in your browser. Phone/browser notifications work only when you allow them and keep the app installed/opened as a web app.</p>
-      </div>
-      <div id="scheduleForm"></div>
-    </section>
-
-    <section class="screen" id="progress">
-      <div class="grid two">
-        <div class="card">
-          <h2>7-day adherence</h2>
-          <div id="adherence7" class="list-clean"></div>
-        </div>
-        <div class="card">
-          <h2>Current streak</h2>
-          <p id="streakText" style="font-size:2rem; font-weight:800; margin-top:8px;">0 days</p>
-          <p class="subtle" style="margin-top:6px;">Counts days where every item was either taken or intentionally skipped and at least 80% were taken.</p>
-        </div>
-      </div>
-      <div class="grid two">
-        <div class="card">
-          <h2>Average check-in</h2>
-          <div id="avgCheckins" class="list-clean"></div>
-        </div>
-        <div class="card">
-          <h2>Recent notes</h2>
-          <div id="recentNotes" class="list-clean"></div>
-        </div>
-      </div>
-    </section>
-
-    <section class="screen" id="settings">
-      <div class="card">
-        <h2>Notification helper</h2>
-        <p class="subtle" style="margin-top:6px;">This app can request browser notifications. On iPhone, the best experience is to add this page to your Home Screen in Safari, open it from there, and allow notifications when prompted.</p>
-        <div class="btns">
-          <button class="primary" id="enableNotifications">Enable notifications</button>
-          <button id="testNotification">Send test notification</button>
-        </div>
-        <div class="note warning" style="margin-top:12px;">For reliable reminders, Apple Reminders or the ChatGPT reminders you already set up are still better. This app is strongest as a tracker/checkoff dashboard.</div>
-      </div>
-      <div class="card">
-        <h2>Export / backup</h2>
-        <div class="btns">
-          <button id="exportData">Export JSON</button>
-          <label for="importData" class="ghost-input" style="cursor:pointer; display:inline-flex; align-items:center;">Import JSON</label>
-          <input id="importData" type="file" accept="application/json" style="display:none;" />
-          <button class="danger" id="resetAll">Reset all data</button>
-        </div>
-      </div>
-    </section>
-
-    <div class="footer-mini">Built as a local-first prototype. Data stays in this browser via localStorage.</div>
+    <section class="timeline" id="timeline"></section>
   </div>
 
+  <div class="foot glass">
+    <div class="foot-copy">Reminders work best after adding this to your Home Screen and allowing notifications.</div>
+    <div style="display:flex; gap:10px;">
+      <button class="btn btn-secondary" id="resetBtn">Reset today</button>
+      <button class="btn btn-primary" id="completeBtn">Mark day complete</button>
+    </div>
+  </div>
+
+  <dialog id="helpDialog">
+    <div class="modal">
+      <h2>Use it like an app on iPhone</h2>
+      <ul>
+        <li>Open this site in Safari.</li>
+        <li>Tap Share, then <strong>Add to Home Screen</strong>.</li>
+        <li>Open the new Home Screen icon.</li>
+        <li>Tap <strong>Enable reminders</strong> and allow notifications.</li>
+        <li>Keep the app open briefly so daily reminders can be scheduled again if needed.</li>
+      </ul>
+      <p>Note: iPhone web apps support notifications on modern iOS, but scheduled reminders can be affected by browser and system limits. For mission-critical medication reminders, Apple Reminders remains the most reliable fallback.</p>
+      <div style="display:flex; justify-content:flex-end; margin-top:14px;"><button class="btn btn-primary" onclick="document.getElementById('helpDialog').close()">Done</button></div>
+    </div>
+  </dialog>
+
+  <dialog id="energyDialog">
+    <div class="modal">
+      <h2>Energy today</h2>
+      <p>Pick a number from 1 to 10.</p>
+      <div id="energyChoices" style="display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-top:14px;"></div>
+      <div style="display:flex; justify-content:flex-end; margin-top:14px;"><button class="btn btn-secondary" onclick="document.getElementById('energyDialog').close()">Close</button></div>
+    </div>
+  </dialog>
+
+  <div class="toast" id="toast"></div>
+
   <script>
-    const STORAGE_KEY = 'daily_stack_app_v1';
-    const todayKey = () => new Date().toISOString().slice(0,10);
-    const prettyDate = () => new Date().toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
-
-    const defaultData = {
-      schedule: {
-        morning: '09:00',
-        breakfast: '10:00',
-        workout: '16:30',
-        night: '21:00'
+    const schedule = [
+      {
+        time: '08:30',
+        label: 'Wake Up',
+        items: [
+          {
+            key: 'levothyroxine',
+            name: 'Levothyroxine',
+            dose: 'Take alone with water',
+            notes: 'Empty stomach only. No food, coffee, Metamucil, multivitamin, or magnesium with it. Wait 30–60 minutes before breakfast.'
+          }
+        ]
       },
-      routines: [
-        {
-          id: 'morning',
-          name: 'Morning Med',
-          timeKey: 'morning',
-          instructions: 'Levothyroxine must be taken with water only on an empty stomach.',
-          items: [
-            { id: 'levothyroxine', name: 'Levothyroxine', dose: '1 tablet', note: 'Water only. No food, coffee, or supplements.' }
-          ]
-        },
-        {
-          id: 'breakfast',
-          name: 'Breakfast Stack',
-          timeKey: 'breakfast',
-          instructions: 'Take with breakfast or food.',
-          items: [
-            { id: 'citrulline_am', name: 'L-Citrulline', dose: '3 g', note: '' },
-            { id: 'pine_bark', name: 'Pine Bark (Pycnogenol)', dose: '100 mg', note: '' },
-            { id: 'fish_oil', name: 'Fish Oil', dose: '1,500–2,000 mg EPA+DHA/day', note: 'Usually 2 softgels, depending on brand.' },
-            { id: 'coq10', name: 'CoQ10 (Ubiquinol)', dose: '100–200 mg', note: '' },
-            { id: 'vitd', name: 'Vitamin D3 + K2', dose: 'standard dose', note: '' }
-          ]
-        },
-        {
-          id: 'workout',
-          name: 'Pre-Workout Stack',
-          timeKey: 'workout',
-          instructions: 'Take before lifting or afternoon workout.',
-          items: [
-            { id: 'citrulline_pm', name: 'L-Citrulline', dose: '3–5 g', note: '' },
-            { id: 'creatine', name: 'Creatine', dose: '5 g', note: '' }
-          ]
-        },
-        {
-          id: 'night',
-          name: 'Night Stack',
-          timeKey: 'night',
-          instructions: 'Take at dinner or before bed. Avoid grapefruit with Lipitor.',
-          items: [
-            { id: 'lipitor', name: 'Lipitor', dose: '10 mg', note: 'Avoid grapefruit.' },
-            { id: 'magnesium', name: 'Magnesium Glycinate', dose: '300–400 mg', note: '' }
-          ]
-        }
-      ],
-      logs: {},
-      checkins: {}
-    };
+      {
+        time: '09:30',
+        label: 'Breakfast',
+        items: [
+          { key: 'multivitamin', name: 'Multivitamin', dose: 'With breakfast', notes: 'Keep away from levothyroxine.' },
+          { key: 'fishoil_am', name: 'Fish Oil', dose: 'Morning dose', notes: 'Take with food.' },
+          { key: 'coq10', name: 'CoQ10', dose: 'With breakfast', notes: 'Often absorbed best with food containing fat.' }
+        ]
+      },
+      {
+        time: '10:30',
+        label: 'Morning Boost',
+        items: [
+          {
+            key: 'lcitrulline',
+            name: 'L-Citrulline',
+            dose: '3–6 g',
+            notes: 'Best away from Metamucil. Empty or light stomach is ideal.'
+          }
+        ]
+      },
+      {
+        time: '13:00',
+        label: 'Lunch',
+        items: [
+          {
+            key: 'metamucil',
+            name: 'Metamucil',
+            dose: '1 serving',
+            notes: 'Full glass of water. Keep at least 4 hours after levothyroxine.'
+          }
+        ]
+      },
+      {
+        time: '18:30',
+        label: 'Dinner',
+        items: [
+          {
+            key: 'fishoil_pm',
+            name: 'Fish Oil',
+            dose: 'Optional second dose',
+            notes: 'Take only if you are splitting your fish oil dose.'
+          }
+        ]
+      },
+      {
+        time: '22:00',
+        label: 'Bedtime',
+        items: [
+          { key: 'magnesium', name: 'Magnesium Glycinate', dose: 'Evening', notes: 'Keep away from levothyroxine.' },
+          { key: 'lipitor', name: 'Lipitor', dose: '10 mg', notes: 'Take consistently each night.' }
+        ]
+      }
+    ];
 
-    function loadData() {
+    const stateKey = 'daily-stack-state-v2';
+    const streakKey = 'daily-stack-streak-v2';
+    const energyKey = 'daily-stack-energy-v1';
+
+    const timelineEl = document.getElementById('timeline');
+    const progressText = document.getElementById('progressText');
+    const progressFill = document.getElementById('progressFill');
+    const streakValue = document.getElementById('streakValue');
+    const energyValue = document.getElementById('energyValue');
+    const toast = document.getElementById('toast');
+
+    function todayId() {
+      const d = new Date();
+      return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+    }
+
+    function getDefaultState() {
+      const done = {};
+      schedule.flatMap(block => block.items).forEach(item => done[item.key] = false);
+      return { day: todayId(), done, completedDay: false, reminderPermission: 'default' };
+    }
+
+    function loadState() {
+      const raw = localStorage.getItem(stateKey);
+      if (!raw) return getDefaultState();
       try {
-        const raw = localStorage.getItem(STORAGE_KEY);
-        if (!raw) return structuredClone(defaultData);
         const parsed = JSON.parse(raw);
-        return {
-          ...structuredClone(defaultData),
-          ...parsed,
-          schedule: { ...defaultData.schedule, ...(parsed.schedule || {}) },
-          logs: parsed.logs || {},
-          checkins: parsed.checkins || {}
-        };
+        if (parsed.day !== todayId()) return getDefaultState();
+        const base = getDefaultState();
+        return { ...base, ...parsed, done: { ...base.done, ...(parsed.done || {}) } };
       } catch {
-        return structuredClone(defaultData);
+        return getDefaultState();
       }
     }
 
-    let state = loadData();
+    function saveState() { localStorage.setItem(stateKey, JSON.stringify(state)); }
 
-    function saveData() {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    function loadStreak() {
+      const raw = localStorage.getItem(streakKey);
+      if (!raw) return { count: 0, lastCompletedDay: null };
+      try { return JSON.parse(raw); } catch { return { count: 0, lastCompletedDay: null }; }
     }
 
-    function getLog(date, itemId) {
-      return state.logs?.[date]?.[itemId] || { status: 'due', takenAt: null };
+    function saveStreak(data) { localStorage.setItem(streakKey, JSON.stringify(data)); }
+
+    function loadEnergy() {
+      const raw = localStorage.getItem(energyKey);
+      if (!raw) return {};
+      try { return JSON.parse(raw); } catch { return {}; }
     }
 
-    function setLog(date, itemId, status) {
-      state.logs[date] ||= {};
-      state.logs[date][itemId] = { status, takenAt: new Date().toISOString() };
-      saveData();
-      renderAll();
+    function saveEnergy(data) { localStorage.setItem(energyKey, JSON.stringify(data)); }
+
+    let state = loadState();
+    let streak = loadStreak();
+    let energyLog = loadEnergy();
+
+    function formatToday() {
+      const d = new Date();
+      document.getElementById('todayLabel').textContent = d.toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' });
     }
 
-    function setCheckinField(date, field, value) {
-      state.checkins[date] ||= { energy: 5, workoutDone: false, stepsGoal: false, notes: '', ed: 5, circulation: 5, sleep: 5 };
-      state.checkins[date][field] = value;
-      saveData();
-      renderProgress();
+    function totalItems() { return schedule.reduce((sum, block) => sum + block.items.length, 0); }
+    function completedCount() { return Object.values(state.done).filter(Boolean).length; }
+
+    function timeToMinutes(t) {
+      const [h, m] = t.split(':').map(Number);
+      return h * 60 + m;
     }
 
-    function dayItemsCount() {
-      return state.routines.reduce((sum, r) => sum + r.items.length, 0);
+    function currentMinutes() {
+      const d = new Date();
+      return d.getHours() * 60 + d.getMinutes();
     }
 
-    function progressForDate(date) {
-      const total = dayItemsCount();
-      let taken = 0, complete = 0;
-      state.routines.forEach(r => r.items.forEach(i => {
-        const s = getLog(date, i.id).status;
-        if (s === 'taken') taken++;
-        if (s === 'taken' || s === 'skipped') complete++;
-      }));
-      return { total, taken, complete, pct: Math.round((taken / total) * 100), completePct: Math.round((complete / total) * 100) };
+    function showToast(msg) {
+      toast.textContent = msg;
+      toast.classList.add('show');
+      clearTimeout(showToast.timer);
+      showToast.timer = setTimeout(() => toast.classList.remove('show'), 2500);
     }
 
-    function cardStatus(routine) {
-      const date = todayKey();
-      const statuses = routine.items.map(i => getLog(date, i.id).status);
-      if (statuses.every(s => s === 'taken')) return ['Done', 'done'];
-      if (statuses.some(s => s === 'taken')) return ['In progress', 'due'];
-      if (statuses.every(s => s === 'skipped')) return ['Skipped', 'skipped'];
-      return ['Due', 'due'];
+    function blockStatus(block) {
+      const now = currentMinutes();
+      const blockMin = timeToMinutes(block.time);
+      const allDone = block.items.every(item => state.done[item.key]);
+      if (allDone) return { text: 'Done', cls: 'done' };
+      if (now >= blockMin && now < blockMin + 90) return { text: 'Up next', cls: 'upnext' };
+      if (block.label === 'Lunch' && now < blockMin && !state.done.levothyroxine) return { text: 'Needs thyroid dose first', cls: 'warning' };
+      return { text: 'Pending', cls: '' };
     }
 
-    function isBreakfastLocked() {
-      const morning = getLog(todayKey(), 'levothyroxine');
-      if (morning.status !== 'taken' || !morning.takenAt) return true;
-      const diffMs = Date.now() - new Date(morning.takenAt).getTime();
-      return diffMs < 30 * 60 * 1000;
+    function toggleNotes(key) {
+      const el = document.querySelector(`[data-item="${key}"]`);
+      el.classList.toggle('show-notes');
     }
 
-    function minutesToBreakfastUnlock() {
-      const morning = getLog(todayKey(), 'levothyroxine');
-      if (!morning.takenAt) return 30;
-      const passed = Math.floor((Date.now() - new Date(morning.takenAt).getTime()) / 60000);
-      return Math.max(0, 30 - passed);
-    }
-
-    function renderToday() {
-      document.getElementById('todayDate').textContent = prettyDate();
-      const root = document.getElementById('today');
-      root.innerHTML = '';
-
-      state.routines.forEach(routine => {
-        const [statusText, statusClass] = cardStatus(routine);
-        const time = state.schedule[routine.timeKey];
-        const card = document.createElement('div');
-        card.className = 'card';
-
-        const lockNote = routine.id === 'breakfast' && isBreakfastLocked();
-
-        card.innerHTML = `
-          <div class="card-head">
-            <div>
-              <h2>${routine.name}</h2>
-              <p class="subtle" style="margin-top:4px;">${time} · ${routine.instructions}</p>
-            </div>
-            <div class="pill ${statusClass}">${statusText}</div>
-          </div>
-          ${lockNote ? `<div class="note warning">Breakfast stack is locked until 30 minutes after levothyroxine. ${minutesToBreakfastUnlock()} min remaining.</div>` : ''}
-          <div class="items"></div>
-          <div class="btns">
-            <button class="primary" data-action="take-all" data-routine="${routine.id}">Taken all</button>
-            <button class="warn" data-action="snooze" data-routine="${routine.id}">Snooze 15 min</button>
-            <button class="danger" data-action="skip-all" data-routine="${routine.id}">Skip all</button>
-          </div>
-        `;
-
-        const itemsWrap = card.querySelector('.items');
-        routine.items.forEach(item => {
-          const log = getLog(todayKey(), item.id);
-          const row = document.createElement('div');
-          row.className = 'item';
-          const disabled = lockNote ? 'disabled' : '';
-          row.innerHTML = `
-            <input type="checkbox" ${log.status === 'taken' ? 'checked' : ''} ${disabled} data-item="${item.id}" data-routine="${routine.id}" />
-            <div class="item-meta">
-              <strong>${item.name}</strong>
-              <small>${item.dose}${item.note ? ' · ' + item.note : ''}</small>
-            </div>
-            <button data-skip-item="${item.id}" ${disabled}>${log.status === 'skipped' ? 'Skipped' : 'Skip'}</button>
-          `;
-          itemsWrap.appendChild(row);
-        });
-        root.appendChild(card);
-      });
-
-      const checkin = state.checkins[todayKey()] || { energy: 5, workoutDone: false, stepsGoal: false, notes: '', ed: 5, circulation: 5, sleep: 5 };
-      const checkCard = document.createElement('div');
-      checkCard.className = 'card';
-      checkCard.innerHTML = `
-        <h2>Daily check-in</h2>
-        <p class="subtle" style="margin-top:4px;">Quick scores help you spot what improves energy, circulation, and ED over time.</p>
-        <div class="metric"><div><strong>Energy</strong></div><div class="seg-row" data-seg="energy"></div></div>
-        <div class="metric"><div><strong>ED confidence</strong></div><div class="seg-row" data-seg="ed"></div></div>
-        <div class="metric"><div><strong>Circulation</strong></div><div class="seg-row" data-seg="circulation"></div></div>
-        <div class="metric"><div><strong>Sleep quality</strong></div><div class="seg-row" data-seg="sleep"></div></div>
-        <div class="metric"><div><strong>Workout done</strong></div><div><input id="workoutDone" type="checkbox" ${checkin.workoutDone ? 'checked' : ''}></div></div>
-        <div class="metric"><div><strong>Steps goal hit</strong></div><div><input id="stepsGoal" type="checkbox" ${checkin.stepsGoal ? 'checked' : ''}></div></div>
-        <div style="margin-top:10px;">
-          <label for="dayNotes">Notes</label>
-          <textarea id="dayNotes" placeholder="Anything you noticed today...">${checkin.notes || ''}</textarea>
-        </div>
-      `;
-      root.appendChild(checkCard);
-
-      ['energy','ed','circulation','sleep'].forEach(field => {
-        const wrap = checkCard.querySelector(`[data-seg="${field}"]`);
-        for (let i=1;i<=10;i++) {
-          const b = document.createElement('button');
-          b.textContent = i;
-          if (checkin[field] === i) b.classList.add('primary');
-          b.addEventListener('click', () => setCheckinField(todayKey(), field, i));
-          wrap.appendChild(b);
+    function validateBeforeToggle(key) {
+      const now = currentMinutes();
+      if (key === 'metamucil') {
+        const levothyroxineDone = state.done.levothyroxine;
+        if (!levothyroxineDone && now < timeToMinutes('13:00')) {
+          showToast('Too early for Metamucil. Keep it 4+ hours after levothyroxine.');
+          return false;
         }
-      });
-
-      checkCard.querySelector('#workoutDone').addEventListener('change', e => setCheckinField(todayKey(), 'workoutDone', e.target.checked));
-      checkCard.querySelector('#stepsGoal').addEventListener('change', e => setCheckinField(todayKey(), 'stepsGoal', e.target.checked));
-      checkCard.querySelector('#dayNotes').addEventListener('change', e => setCheckinField(todayKey(), 'notes', e.target.value));
-
-      root.querySelectorAll('input[data-item]').forEach(cb => {
-        cb.addEventListener('change', e => setLog(todayKey(), e.target.dataset.item, e.target.checked ? 'taken' : 'due'));
-      });
-      root.querySelectorAll('button[data-skip-item]').forEach(btn => {
-        btn.addEventListener('click', e => {
-          const itemId = e.target.dataset.skipItem;
-          const log = getLog(todayKey(), itemId);
-          setLog(todayKey(), itemId, log.status === 'skipped' ? 'due' : 'skipped');
-        });
-      });
-      root.querySelectorAll('button[data-action]').forEach(btn => {
-        btn.addEventListener('click', e => {
-          const action = e.target.dataset.action;
-          const routineId = e.target.dataset.routine;
-          const routine = state.routines.find(r => r.id === routineId);
-          if (routineId === 'breakfast' && isBreakfastLocked()) return;
-          if (action === 'take-all') routine.items.forEach(i => setLog(todayKey(), i.id, 'taken'));
-          if (action === 'skip-all') routine.items.forEach(i => setLog(todayKey(), i.id, 'skipped'));
-          if (action === 'snooze') alert(`${routine.name} snoozed 15 minutes. For real push scheduling, use Apple Reminders or enable browser notifications.`);
-        });
-      });
-
-      const prog = progressForDate(todayKey());
-      const deg = Math.round((prog.pct / 100) * 360);
-      document.getElementById('progressRing').style.background = `conic-gradient(var(--accent-2) 0deg, var(--accent-2) ${deg}deg, rgba(255,255,255,.08) ${deg}deg)`;
-      document.getElementById('progressPct').textContent = `${prog.pct}%`;
+      }
+      return true;
     }
 
-    function renderSchedule() {
-      const root = document.getElementById('scheduleForm');
-      root.innerHTML = '';
-      const labels = {
-        morning: 'Morning Med',
-        breakfast: 'Breakfast Stack',
-        workout: 'Pre-Workout Stack',
-        night: 'Night Stack'
-      };
-      Object.entries(labels).forEach(([key, label]) => {
-        const card = document.createElement('div');
-        card.className = 'card';
+    function toggleItem(key) {
+      if (!validateBeforeToggle(key)) return;
+      state.done[key] = !state.done[key];
+      saveState();
+      render();
+    }
+
+    function render() {
+      timelineEl.innerHTML = '';
+      schedule.forEach(block => {
+        const status = blockStatus(block);
+        const card = document.createElement('section');
+        card.className = 'card glass';
         card.innerHTML = `
-          <label>${label}</label>
-          <input type="time" value="${state.schedule[key]}" data-timekey="${key}" />
-        `;
-        root.appendChild(card);
-      });
-      root.querySelectorAll('input[type="time"]').forEach(inp => {
-        inp.addEventListener('change', e => {
-          state.schedule[e.target.dataset.timekey] = e.target.value;
-          saveData();
-          renderToday();
-        });
-      });
-    }
-
-    function lastNDates(n) {
-      const arr = [];
-      for (let i=0;i<n;i++) {
-        const d = new Date();
-        d.setDate(d.getDate() - i);
-        arr.push(d.toISOString().slice(0,10));
-      }
-      return arr.reverse();
-    }
-
-    function renderProgress() {
-      const adherence = document.getElementById('adherence7');
-      adherence.innerHTML = '';
-      lastNDates(7).forEach(date => {
-        const p = progressForDate(date);
-        const row = document.createElement('div');
-        row.innerHTML = `
-          <div style="display:flex; justify-content:space-between; gap:10px;">
-            <span>${new Date(date+'T12:00:00').toLocaleDateString(undefined,{weekday:'short', month:'short', day:'numeric'})}</span>
-            <strong>${p.pct}%</strong>
+          <div class="card-header">
+            <div class="time-wrap">
+              <div class="time">${formatTime(block.time)}</div>
+              <div class="label">${block.label}</div>
+            </div>
+            <div class="pill ${status.cls}">${status.text}</div>
           </div>
-          <div class="bar"><div style="width:${p.pct}%;"></div></div>
-        `;
-        adherence.appendChild(row);
+          <div class="items">
+            ${block.items.map(item => `
+              <button class="item ${state.done[item.key] ? 'done' : ''}" data-item="${item.key}" onclick="toggleItem('${item.key}')">
+                <div class="check">✓</div>
+                <div class="item-main" style="text-align:left;">
+                  <div class="item-name">${item.name}</div>
+                  <div class="item-dose">${item.dose || ''}</div>
+                  <div class="item-notes">${item.notes || ''}</div>
+                </div>
+                <span class="info-btn" onclick="event.stopPropagation(); toggleNotes('${item.key}')">i</span>
+              </button>
+            `).join('')}
+          </div>`;
+        timelineEl.appendChild(card);
       });
 
-      let streak = 0;
-      const dates = lastNDates(30).reverse();
-      for (const date of dates) {
-        const p = progressForDate(date);
-        if (p.completePct === 100 && p.pct >= 80) streak++;
-        else break;
+      const complete = completedCount();
+      const total = totalItems();
+      progressText.textContent = `${complete} of ${total} complete`;
+      progressFill.style.width = `${Math.round((complete / total) * 100)}%`;
+      streakValue.textContent = String(streak.count || 0);
+      energyValue.textContent = energyLog[todayId()] ?? '—';
+      document.getElementById('notifyBtn').textContent = (Notification && Notification.permission === 'granted') ? 'Reminders enabled' : 'Enable reminders';
+    }
+
+    function formatTime(time24) {
+      const [h, m] = time24.split(':').map(Number);
+      const suffix = h >= 12 ? 'PM' : 'AM';
+      const hr = h % 12 || 12;
+      return `${hr}:${String(m).padStart(2, '0')} ${suffix}`;
+    }
+
+    function resetToday() {
+      state = getDefaultState();
+      saveState();
+      render();
+      showToast('Today reset.');
+    }
+
+    function markDayComplete() {
+      const total = totalItems();
+      const complete = completedCount();
+      if (complete < total) {
+        showToast('A few items are still unchecked.');
+        return;
       }
-      document.getElementById('streakText').textContent = `${streak} day${streak === 1 ? '' : 's'}`;
+      if (state.completedDay) {
+        showToast('Today already counted.');
+        return;
+      }
+      const yesterday = new Date();
+      yesterday.setDate(yesterday.getDate() - 1);
+      const yesterdayId = `${yesterday.getFullYear()}-${String(yesterday.getMonth()+1).padStart(2,'0')}-${String(yesterday.getDate()).padStart(2,'0')}`;
+      if (streak.lastCompletedDay === yesterdayId) streak.count += 1;
+      else if (streak.lastCompletedDay !== todayId()) streak.count = 1;
+      streak.lastCompletedDay = todayId();
+      state.completedDay = true;
+      saveStreak(streak);
+      saveState();
+      render();
+      showToast('Nice work. Day completed.');
+    }
 
-      const checkins = lastNDates(14).map(d => state.checkins[d]).filter(Boolean);
-      const avg = field => checkins.length ? (checkins.reduce((s,c)=>s+(Number(c[field])||0),0) / checkins.length).toFixed(1) : '—';
-      const avgRoot = document.getElementById('avgCheckins');
-      avgRoot.innerHTML = `
-        <div>Energy: <strong>${avg('energy')}</strong></div>
-        <div>ED confidence: <strong>${avg('ed')}</strong></div>
-        <div>Circulation: <strong>${avg('circulation')}</strong></div>
-        <div>Sleep quality: <strong>${avg('sleep')}</strong></div>
-      `;
-
-      const notesRoot = document.getElementById('recentNotes');
-      notesRoot.innerHTML = '';
-      const notes = lastNDates(14)
-        .map(d => ({ date: d, note: state.checkins[d]?.notes }))
-        .filter(x => x.note && x.note.trim());
-      if (!notes.length) {
-        notesRoot.innerHTML = '<div class="subtle">No notes yet.</div>';
-      } else {
-        notes.slice(-5).reverse().forEach(n => {
-          const div = document.createElement('div');
-          div.className = 'note';
-          div.innerHTML = `<strong>${new Date(n.date+'T12:00:00').toLocaleDateString()}</strong><br>${n.note}`;
-          notesRoot.appendChild(div);
-        });
+    function renderEnergyChoices() {
+      const wrap = document.getElementById('energyChoices');
+      wrap.innerHTML = '';
+      for (let i = 1; i <= 10; i++) {
+        const btn = document.createElement('button');
+        btn.className = 'btn ' + ((energyLog[todayId()] === i) ? 'btn-primary' : 'btn-secondary');
+        btn.textContent = i;
+        btn.onclick = () => {
+          energyLog[todayId()] = i;
+          saveEnergy(energyLog);
+          document.getElementById('energyDialog').close();
+          render();
+          showToast(`Energy logged: ${i}/10`);
+        };
+        wrap.appendChild(btn);
       }
     }
 
-    function renderAll() {
-      renderToday();
-      renderSchedule();
-      renderProgress();
+    async function enableNotifications() {
+      if (!('Notification' in window)) {
+        showToast('Notifications are not supported on this device/browser.');
+        return;
+      }
+      const permission = await Notification.requestPermission();
+      if (permission !== 'granted') {
+        showToast('Notifications were not enabled.');
+        return;
+      }
+      registerServiceWorker();
+      scheduleLocalReminders();
+      render();
+      showToast('Reminders enabled.');
     }
 
-    document.querySelectorAll('.tab').forEach(tab => {
-      tab.addEventListener('click', () => {
-        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-        tab.classList.add('active');
-        document.getElementById(tab.dataset.screen).classList.add('active');
-      });
-    });
-
-    document.getElementById('enableNotifications').addEventListener('click', async () => {
-      if (!('Notification' in window)) return alert('This browser does not support notifications.');
-      const result = await Notification.requestPermission();
-      alert(`Notification permission: ${result}`);
-    });
-    document.getElementById('testNotification').addEventListener('click', () => {
-      if (Notification.permission !== 'granted') return alert('Enable notifications first.');
-      new Notification('Daily Stack', { body: 'Test reminder is working.' });
-    });
-    document.getElementById('exportData').addEventListener('click', () => {
-      const blob = new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' });
-      const a = document.createElement('a');
-      a.href = URL.createObjectURL(blob);
-      a.download = `daily-stack-backup-${todayKey()}.json`;
-      a.click();
-    });
-    document.getElementById('importData').addEventListener('change', async e => {
-      const file = e.target.files[0];
-      if (!file) return;
-      const text = await file.text();
-      try {
-        state = JSON.parse(text);
-        saveData();
-        renderAll();
-        alert('Import complete.');
-      } catch {
-        alert('Could not import that file.');
+    async function registerServiceWorker() {
+      if ('serviceWorker' in navigator) {
+        try { await navigator.serviceWorker.register('./sw.js'); } catch (e) { console.error(e); }
       }
-    });
-    document.getElementById('resetAll').addEventListener('click', () => {
-      if (!confirm('Reset all data? This cannot be undone.')) return;
-      state = structuredClone(defaultData);
-      saveData();
-      renderAll();
-    });
+    }
 
-    renderAll();
+    function scheduleLocalReminders() {
+      // Browser-based web apps cannot guarantee true OS-level scheduled local notifications across all iPhone conditions.
+      // This stores preferred reminders so the service worker and app can use them when supported.
+      const reminders = schedule.map(block => ({
+        id: block.label,
+        time: block.time,
+        title: block.label,
+        body: block.items.map(x => x.name).join(', ')
+      }));
+      localStorage.setItem('daily-stack-reminders-v1', JSON.stringify(reminders));
+    }
+
+    document.getElementById('notifyBtn').addEventListener('click', enableNotifications);
+    document.getElementById('resetBtn').addEventListener('click', resetToday);
+    document.getElementById('completeBtn').addEventListener('click', markDayComplete);
+    document.getElementById('helpBtn').addEventListener('click', () => document.getElementById('helpDialog').showModal());
+    document.getElementById('energyBtn').addEventListener('click', () => { renderEnergyChoices(); document.getElementById('energyDialog').showModal(); });
+
+    window.toggleItem = toggleItem;
+    window.toggleNotes = toggleNotes;
+
+    formatToday();
+    render();
+    registerServiceWorker();
   </script>
 </body>
 </html>
